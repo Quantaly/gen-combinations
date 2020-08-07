@@ -1,44 +1,45 @@
+#![doc(html_root_url = "https://docs.rs/gen-combinations/0.1.0")]
 //! A general combination generator that iterates over all possible combinations of a slice of items.
 //!
 //! Note that combinations are different than permutations in that this crate will not generate all possible orderings
 //! of those items.
 //!
 //! This crate does not check for uniqueness among the items; if this is desired, it is left up to the user to ensure that
-//! the items are unique before passing them to [`generate`].
+//! the items are unique before passing them to [`CombinationIterator::new`].
 //! 
-//! [`generate`]: fn.generate.html
+//! [`CombinationIterator::new`]: struct.CombinationIterator.html#method.new
 
-/// Iterates over all possible combinations of `n` `items`.
+/// Iterates over all possible combinations of items.
 /// 
 /// The combinations are of immutable references to the items.
-///
-/// If n is larger than the length of items, or if n is 0, the iterator will produce no values.
 /// 
 /// # Examples
 /// 
 /// ```
-/// use gen_combinations::generate;
+/// use gen_combinations::CombinationIterator;
 /// 
 /// let items = [1, 2, 3];
-/// for combo in generate(&items, 2) {
+/// for combo in CombinationIterator::new(&items, 2) {
 ///     println!("{:?}", combo);
 ///     // [1, 2]
 ///     // [1, 3]
 ///     // [2, 3]
 /// }
 /// ```
-pub fn generate<T>(items: &[T], n: usize) -> CombinationIterator<T> {
-    let indices = (0..n).collect();
-    CombinationIterator { items, indices }
-}
-
-
-/// Returned by [`generate`]. Iterates over all possible combinations of items.
-/// 
-/// [`generate`]: fn.generate.html
+#[derive(Debug)]
 pub struct CombinationIterator<'a, T> {
     items: &'a [T],
     indices: Vec<usize>,
+}
+
+impl<T> CombinationIterator<'_, T> {
+    /// Creates an iterator over combinations of `items` with length `n`.
+    /// 
+    /// If `n` is 0 or greater than `items.len()`, the iterator will produce no values.
+    pub fn new(items: &[T], n: usize) -> CombinationIterator<T> {
+        let indices = (0..n).collect();
+        CombinationIterator { items, indices }
+    }
 }
 
 impl<'a, T> Iterator for CombinationIterator<'a, T> {
@@ -67,7 +68,7 @@ impl<'a, T> Iterator for CombinationIterator<'a, T> {
 #[test]
 fn generate_combinations() {
     let items = [1, 2, 3];
-    let mut c = generate(&items, 2);
+    let mut c = CombinationIterator::new(&items, 2);
     assert_eq!(c.next(), Some(vec![&1, &2]));
     assert_eq!(c.next(), Some(vec![&1, &3]));
     assert_eq!(c.next(), Some(vec![&2, &3]));
@@ -77,7 +78,7 @@ fn generate_combinations() {
 #[test]
 fn generate_more_combinations() {
     let items = [1, 2, 3, 4, 5];
-    let mut c = generate(&items, 3);
+    let mut c = CombinationIterator::new(&items, 3);
     assert_eq!(c.next(), Some(vec![&1, &2, &3]));
     assert_eq!(c.next(), Some(vec![&1, &2, &4]));
     assert_eq!(c.next(), Some(vec![&1, &2, &5]));
@@ -94,7 +95,7 @@ fn generate_more_combinations() {
 #[test]
 fn generate_combinations_of_things_that_arent_copy_just_to_be_sure() {
     let items = [String::from("one"), String::from("two"), String::from("yeet")];
-    let mut c = generate(&items, 2);
+    let mut c = CombinationIterator::new(&items, 2);
     assert_eq!(c.next(), Some(vec![&String::from("one"), &String::from("two")]));
     assert_eq!(c.next(), Some(vec![&String::from("one"), &String::from("yeet")]));
     assert_eq!(c.next(), Some(vec![&String::from("two"), &String::from("yeet")]));
@@ -104,9 +105,9 @@ fn generate_combinations_of_things_that_arent_copy_just_to_be_sure() {
 #[test]
 fn misuse_arguments() {
     let items = [1, 2, 3];
-    let mut c = generate(&items, 500);
+    let mut c = CombinationIterator::new(&items, 500);
     assert_eq!(c.next(), None);
 
-    let mut c = generate(&items, 0);
+    let mut c = CombinationIterator::new(&items, 0);
     assert_eq!(c.next(), None);
 }
